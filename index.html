@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Расписание ЮТК</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,8 +12,8 @@
             color: #edf2ff;
             padding: 20px;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 32px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 32px; position: relative; }
         .logo {
             font-size: 1.8rem;
             font-weight: 700;
@@ -21,6 +21,8 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            cursor: pointer;
+            user-select: none;
         }
         .group-panel {
             background: #11161f;
@@ -43,157 +45,233 @@
             padding: 8px 18px;
             border-radius: 40px;
             cursor: pointer;
-            font-size: 0.9rem;
         }
-        .group-btn.active, .group-btn:hover {
-            background: #3e5a8c;
-            color: white;
-        }
-        .schedule-card {
-            background: #11161f;
-            border-radius: 32px;
-            padding: 20px;
-            border: 1px solid #232a38;
-        }
-        .day-header {
-            border-bottom: 1px solid #293141;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
+        .group-btn.active, .group-btn:hover { background: #3e5a8c; color: white; }
+        .subgroup-header { display: flex; gap: 16px; margin-bottom: 20px; text-align: center; font-weight: 600; }
+        .subgroup-col { flex: 1; background: #1a212e; padding: 10px; border-radius: 20px; color: #c0e0ff; }
+        .schedule-card { background: #11161f; border-radius: 32px; padding: 20px; border: 1px solid #232a38; }
+        .day-header { border-bottom: 1px solid #293141; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: baseline; }
         .day-week { font-size: 1.3rem; font-weight: 700; color: #c0e0ff; }
-        .pair {
-            background: #0b1018;
-            border-radius: 24px;
-            padding: 14px 18px;
-            margin-bottom: 10px;
-            border-left: 4px solid #4a6bb5;
-        }
-        .pair-num { font-weight: 600; margin-bottom: 6px; color: #bbd4ff; }
+        .short-mode-tag { background: #8c6e3e; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; color: white; }
+        .pair-row { display: flex; gap: 16px; margin-bottom: 12px; }
+        .pair-col { flex: 1; background: #0b1018; border-radius: 24px; padding: 14px; min-height: 100px; }
+        .pair-col.common { flex: 2; text-align: center; }
+        .pair-num { font-weight: 600; color: #bbd4ff; margin-bottom: 4px; font-size: 0.85rem; }
+        .pair-time { font-size: 0.7rem; color: #8a9bcc; margin-bottom: 8px; font-family: monospace; }
         .pair-subj { font-weight: 500; white-space: pre-line; }
-        .pair-teacher { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+        .pair-teacher, .pair-room { font-size: 0.7rem; opacity: 0.7; margin-top: 4px; }
+        .empty-subgroup { color: #5a6b8a; font-style: italic; text-align: center; padding: 12px 0; }
         .empty-day { text-align: center; padding: 36px; color: #7b8bb0; }
-        .status { text-align: center; font-size: 0.75rem; color: #6a7ca3; margin: 16px 0; }
         .footer { text-align: center; margin-top: 32px; font-size: 0.7rem; color: #44506e; }
-        .last-updated { text-align: center; font-size: 0.7rem; margin-top: 8px; color: #5a6b8a; }
+        @media (max-width: 700px) { .pair-row { flex-direction: column; } .pair-col.common { flex: 1; } }
+        
+        .admin-panel, .password-prompt {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.95); z-index: 1000; overflow: auto; padding: 40px;
+        }
+        .admin-panel.active, .password-prompt.active { display: block; }
+        .admin-container, .password-container {
+            max-width: 900px; margin: 0 auto; background: #11161f;
+            border-radius: 32px; padding: 24px;
+        }
+        .admin-btn { background: #2a3448; border: none; color: white; padding: 6px 12px; border-radius: 20px; cursor: pointer; margin: 4px; }
+        .admin-btn.primary { background: #3e5a8c; }
+        .admin-btn.danger { background: #8c3e3e; }
+        .day-editor { background: #0b1018; border-radius: 24px; padding: 16px; margin-bottom: 16px; }
+        input, select { background: #1a212e; border: 1px solid #3e5a8c; color: white; padding: 6px 10px; border-radius: 12px; margin: 4px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <div class="logo">📚 ЮТК | Расписание</div>
-        <div class="status">Юргинский технологический колледж</div>
+        <div class="logo" id="secretClicker">📚 ЮТК | Расписание</div>
+        <div class="footer">Юргинский технологический колледж</div>
     </div>
-
-    <div class="group-panel">
-        <div class="group-list" id="groupList">Загрузка...</div>
-    </div>
-
-    <div class="schedule-card" id="scheduleCard">
-        <div class="empty-day">📌 Выберите группу</div>
-    </div>
-    <div class="footer">🔄 Расписание обновлено 11.06.2026</div>
+    <div class="group-panel"><div class="group-list" id="groupList"></div></div>
+    <div class="schedule-card" id="scheduleCard"><div class="empty-day">📌 Выберите группу</div></div>
+    <div class="footer">🔄 Понедельники и праздники — сокращённое расписание (пары по 1 часу)</div>
 </div>
 
+<div class="admin-panel" id="adminPanel"><div class="admin-container"><h2>⚙️ Админ-панель</h2><div id="adminContent"></div><button class="admin-btn primary" id="saveGitHubBtn">💾 Сохранить на GitHub</button><button class="admin-btn danger" id="closeAdminBtn">❌ Закрыть</button></div></div>
+<div class="password-prompt" id="passwordPrompt"><div class="password-container"><h3>🔐 Введите пароль</h3><input type="password" id="adminPassword" placeholder="Пароль"><button id="submitPasswordBtn" class="admin-btn primary">Войти</button><button id="closePasswordBtn" class="admin-btn danger">Отмена</button></div></div>
+
 <script>
-    let scheduleData = {};
+    // === ВАШИ ДАННЫЕ (заполните) ===
+    const ADMIN_PASSWORD = "admin123";
+    const GITHUB_TOKEN = "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";
+    const REPO_NAME = prompt("Введите имя репозитория (username/repo):", "ваше-имя/ваш-репозиторий");
     
-    const groups = ["152","153","154","155","252","253","254","255","343","344","352","353","354","355","454","455","512","513","514","515","552","553","554","555","652","653","655","754","755","812","813","814","815","852","853","854","855","952","953","954","955"];
+    const NORMAL_TIMES = {1:"08:00 – 09:30",2:"09:40 – 11:10",3:"12:00 – 13:30",4:"13:40 – 15:10",5:"15:25 – 16:55",6:"17:05 – 18:35",7:"18:45 – 20:15",8:"20:25 – 21:55"};
+    const SHORT_TIMES = {1:"08:00 – 09:00",2:"09:15 – 10:15",3:"11:15 – 12:15",4:"12:25 – 13:25",5:"13:40 – 14:40",6:"14:50 – 15:50",7:"16:00 – 17:00",8:"17:10 – 18:10"};
+    let HOLIDAYS = ["01.01","02.01","03.01","04.01","05.01","06.01","07.01","08.01","23.02","08.03","01.05","09.05","12.06","04.11"];
+    let scheduleData = {};
+    let currentGroup = null;
+    let clickCount = 0;
+    const GROUP_LIST = ["152","153","154","155","252","253","254","255","343","344","352","353","354","355","454","455","512","513","514","515","552","553","554","555","652","653","655","754","755","812","813","814","815","852","853","854","855","952","953","954","955"];
     
     async function loadData() {
         try {
-            const res = await fetch('data/schedule.json?v=' + Date.now());
-            scheduleData = await res.json();
-            renderGroups();
-        } catch (e) {
-            document.getElementById('groupList').innerHTML = '<div style="color:#ff8888;">❌ Не удалось загрузить данные. Убедитесь, что файл schedule.json лежит в папке data/</div>';
+            const res = await fetch('data/schedule.json?v='+Date.now());
+            if(res.ok) scheduleData = await res.json();
+            else throw new Error();
+        } catch(e) {
+            GROUP_LIST.forEach(g => { scheduleData[g] = { subgroups: { "1": "Подгруппа 1", "2": "Подгруппа 2" }, days: [] }; });
+            scheduleData["455"].days.push({ date: "11.06.2026", shortMode: false, pairs: [{ num:1, type:"common", subject:"ИП 122", teacher:"Яковлева И.В.", room:"122" }] });
         }
+        renderGroups();
     }
     
+    function isShortModeDay(dateStr, flag) {
+        if(flag !== null) return flag;
+        let [d,m,y] = dateStr.split('.');
+        let weekday = new Date(`${y}-${m}-${d}`).getDay();
+        return (weekday===1) || HOLIDAYS.includes(`${d}.${m}`);
+    }
+    function getPairTimes(num, isShort) { return (isShort?SHORT_TIMES:NORMAL_TIMES)[num] || "—"; }
+    
     function renderGroups() {
-        const container = document.getElementById('groupList');
+        let container = document.getElementById('groupList');
         container.innerHTML = '';
-        groups.forEach(group => {
-            if (!scheduleData[group]) return;
-            const btn = document.createElement('button');
-            btn.className = 'group-btn';
-            btn.textContent = group;
-            btn.onclick = () => {
-                document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                showSchedule(group);
-            };
+        GROUP_LIST.forEach(g => {
+            if(!scheduleData[g]) return;
+            let btn = document.createElement('button');
+            btn.className = 'group-btn' + (currentGroup===g ? ' active' : '');
+            btn.textContent = g;
+            btn.onclick = () => { document.querySelectorAll('.group-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentGroup=g; showSchedule(g); };
             container.appendChild(btn);
         });
-        if (groups.length) {
-            const first = groups.find(g => scheduleData[g]);
-            if (first) showSchedule(first);
-        }
+        if(!currentGroup) currentGroup = GROUP_LIST[0];
+        if(currentGroup) showSchedule(currentGroup);
     }
     
     function showSchedule(group) {
-        const card = document.getElementById('scheduleCard');
-        const days = scheduleData[group];
-        
-        if (!days || days.length === 0) {
-            card.innerHTML = '<div class="empty-day">📭 Нет данных для этой группы</div>';
-            return;
-        }
-        
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const future = days.filter(d => {
-            const [day, month, year] = d.date.split('.');
-            const dDate = new Date(`${year}-${month}-${day}`);
-            return dDate >= today;
-        });
-        
-        const nearest = future[0] || days[0];
-        const weekdays = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-        const [day, month, year] = nearest.date.split('.');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-        const weekday = weekdays[dateObj.getDay()];
-        
+        let card = document.getElementById('scheduleCard');
+        let data = scheduleData[group];
+        if(!data || !data.days || !data.days.length) { card.innerHTML='<div class="empty-day">📭 Нет расписания</div>'; return; }
+        let today = new Date(); today.setHours(0,0,0,0);
+        let future = data.days.filter(d => { let [dd,mm,yy]=d.date.split('.'); return new Date(`${yy}-${mm}-${dd}`) >= today; });
+        let nearest = future[0] || data.days[0];
+        let isShort = isShortModeDay(nearest.date, nearest.shortMode);
+        let weekdays = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+        let [dd,mm,yy] = nearest.date.split('.');
+        let weekday = weekdays[new Date(`${yy}-${mm}-${dd}`).getDay()];
         let pairsHtml = '';
-        for (let p of nearest.pairs) {
-            let subject = p.subject;
-            let teacher = '';
-            if (subject.includes('\n')) {
-                const parts = subject.split('\n');
-                subject = parts[0];
-                teacher = parts[1];
-            }
-            pairsHtml += `
-                <div class="pair">
-                    <div class="pair-num">${p.num} пара</div>
-                    <div class="pair-subj">${escapeHtml(subject)}</div>
-                    ${teacher ? `<div class="pair-teacher">${escapeHtml(teacher)}</div>` : ''}
-                </div>
-            `;
+        for(let p of nearest.pairs) {
+            let timeStr = getPairTimes(p.num, isShort);
+            if(p.type === 'common') pairsHtml += `<div class="pair-row"><div class="pair-col common"><div class="pair-num">${p.num} пара • ${timeStr}</div><div class="pair-subj">${escapeHtml(p.subject)}</div>${p.teacher?`<div class="pair-teacher">${escapeHtml(p.teacher)}</div>`:''}${p.room?`<div class="pair-room">Каб. ${escapeHtml(p.room)}</div>`:''}</div></div>`;
+            else if(p.type === 'split') pairsHtml += `<div class="pair-row"><div class="pair-col"><div class="pair-num">${p.num} пара (1) • ${timeStr}</div><div class="pair-subj">${escapeHtml(p["1"]||'—')}</div>${p.teacher1?`<div class="pair-teacher">${escapeHtml(p.teacher1)}</div>`:''}${p.room1?`<div class="pair-room">Каб. ${escapeHtml(p.room1)}</div>`:''}</div><div class="pair-col"><div class="pair-num">${p.num} пара (2) • ${timeStr}</div><div class="pair-subj">${escapeHtml(p["2"]||'—')}</div>${p.teacher2?`<div class="pair-teacher">${escapeHtml(p.teacher2)}</div>`:''}${p.room2?`<div class="pair-room">Каб. ${escapeHtml(p.room2)}</div>`:''}</div></div>`;
+            else if(p.type === 'only1') pairsHtml += `<div class="pair-row"><div class="pair-col"><div class="pair-num">${p.num} пара (1) • ${timeStr}</div><div class="pair-subj">${escapeHtml(p.subject)}</div>${p.teacher?`<div class="pair-teacher">${escapeHtml(p.teacher)}</div>`:''}${p.room?`<div class="pair-room">Каб. ${escapeHtml(p.room)}</div>`:''}</div><div class="pair-col"><div class="empty-subgroup">—</div></div></div>`;
+            else if(p.type === 'only2') pairsHtml += `<div class="pair-row"><div class="pair-col"><div class="empty-subgroup">—</div></div><div class="pair-col"><div class="pair-num">${p.num} пара (2) • ${timeStr}</div><div class="pair-subj">${escapeHtml(p.subject)}</div>${p.teacher?`<div class="pair-teacher">${escapeHtml(p.teacher)}</div>`:''}${p.room?`<div class="pair-room">Каб. ${escapeHtml(p.room)}</div>`:''}</div></div>`;
         }
-        
-        card.innerHTML = `
-            <div class="day-header">
-                <span class="day-week">${weekday}</span>
-                <span style="opacity:0.7;">${nearest.date}</span>
-            </div>
-            ${pairsHtml || '<div class="empty-day">✨ Пар нет ✨</div>'}
-            <div style="margin-top:16px; font-size:0.7rem; text-align:center; opacity:0.6;">Группа ${group}</div>
-        `;
+        let subgroups = data.subgroups || {"1":"Подгруппа 1","2":"Подгруппа 2"};
+        let modeText = isShort ? "🔹 СОКРАЩЁННЫЙ ДЕНЬ" : "🔸 ОБЫЧНЫЙ ДЕНЬ";
+        card.innerHTML = `<div class="day-header"><span class="day-week">${weekday}</span><span>${nearest.date}</span><span class="short-mode-tag">${modeText}</span></div><div class="subgroup-header"><div class="subgroup-col">📘 ${escapeHtml(subgroups["1"])}</div><div class="subgroup-col">📗 ${escapeHtml(subgroups["2"])}</div></div>${pairsHtml||'<div class="empty-day">✨ Пар нет ✨</div>'}<div style="margin-top:16px; font-size:0.7rem; text-align:center; opacity:0.6;">Группа ${group}</div>`;
     }
     
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+    
+    // Админ-панель (упрощённо, но рабочая)
+    function openAdmin() { renderAdminEditor(); document.getElementById('adminPanel').classList.add('active'); }
+    function renderAdminEditor() {
+        let container = document.getElementById('adminContent');
+        if(!scheduleData[currentGroup]) { container.innerHTML='<div class="empty-day">Выберите группу</div>'; return; }
+        let html = `<h3>Группа ${currentGroup}</h3>`;
+        let sub = scheduleData[currentGroup].subgroups || {"1":"Подгруппа 1","2":"Подгруппа 2"};
+        html += `<div><input type="text" id="sub1" value="${escapeHtml(sub["1"])}"><input type="text" id="sub2" value="${escapeHtml(sub["2"])}"><button class="admin-btn" id="saveSubBtn">Сохранить названия</button></div>`;
+        html += `<div><input type="text" id="holidays" value="${HOLIDAYS.join(', ')}" style="width:100%"><button class="admin-btn" id="saveHolidaysBtn">Сохранить праздники</button></div>`;
+        html += `<button class="admin-btn primary" id="addDayBtn">+ Добавить день</button><div id="daysEditor">`;
+        let days = scheduleData[currentGroup].days || [];
+        for(let i=0; i<days.length; i++) {
+            let d = days[i];
+            html += `<div class="day-editor"><input type="text" id="dayDate_${i}" value="${d.date}"><label><input type="checkbox" id="dayShort_${i}" ${d.shortMode?'checked':''}> Сокращённый</label><button class="admin-btn danger" onclick="removeDay(${i})">Удалить день</button><div id="pairs_${i}">${renderPairs(d.pairs,i)}</div><button class="admin-btn" onclick="addPair(${i})">+ Добавить пару</button></div>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+        document.getElementById('saveSubBtn')?.addEventListener('click',()=>{ scheduleData[currentGroup].subgroups={"1":document.getElementById('sub1').value,"2":document.getElementById('sub2').value}; showSchedule(currentGroup); alert('Сохранено'); });
+        document.getElementById('saveHolidaysBtn')?.addEventListener('click',()=>{ HOLIDAYS=document.getElementById('holidays').value.split(',').map(s=>s.trim()); alert('Праздники сохранены'); });
+        document.getElementById('addDayBtn')?.addEventListener('click',()=>{ if(!scheduleData[currentGroup].days) scheduleData[currentGroup].days=[]; scheduleData[currentGroup].days.push({date:"ДД.ММ.ГГГГ", shortMode:false, pairs:[]}); renderAdminEditor(); });
+    }
+    function renderPairs(pairs, dayIdx) {
+        if(!pairs.length) return '<div>Нет пар</div>';
+        let html = '';
+        for(let j=0; j<pairs.length; j++) {
+            let p = pairs[j];
+            html += `<div style="border-top:1px solid #2a3448; padding:8px 0;"><select id="type_${dayIdx}_${j}" onchange="changeType(${dayIdx},${j})"><option value="common" ${p.type==='common'?'selected':''}>Общая</option><option value="split" ${p.type==='split'?'selected':''}>Раздельно (1 и 2)</option><option value="only1" ${p.type==='only1'?'selected':''}>Только 1</option><option value="only2" ${p.type==='only2'?'selected':''}>Только 2</option></select>
+            <input type="number" value="${p.num}" id="num_${dayIdx}_${j}" style="width:70px"><button class="admin-btn danger" onclick="removePair(${dayIdx},${j})">Удалить</button><br>`;
+            if(p.type==='common') html += `<input type="text" value="${escapeHtml(p.subject||'')}" placeholder="Предмет" id="subj_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.teacher||'')}" placeholder="Преподаватель" id="teach_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.room||'')}" placeholder="Кабинет" id="room_${dayIdx}_${j}">`;
+            else if(p.type==='split') html += `<div><strong>1 подгр:</strong> <input type="text" value="${escapeHtml(p["1"]||'')}" placeholder="Предмет" id="s1_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.teacher1||'')}" placeholder="Преподаватель" id="t1_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.room1||'')}" placeholder="Кабинет" id="r1_${dayIdx}_${j}"></div><div><strong>2 подгр:</strong> <input type="text" value="${escapeHtml(p["2"]||'')}" placeholder="Предмет" id="s2_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.teacher2||'')}" placeholder="Преподаватель" id="t2_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.room2||'')}" placeholder="Кабинет" id="r2_${dayIdx}_${j}"></div>`;
+            else html += `<input type="text" value="${escapeHtml(p.subject||'')}" placeholder="Предмет" id="subj_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.teacher||'')}" placeholder="Преподаватель" id="teach_${dayIdx}_${j}"> <input type="text" value="${escapeHtml(p.room||'')}" placeholder="Кабинет" id="room_${dayIdx}_${j}">`;
+            html += `</div>`;
+        }
+        return html;
+    }
+    window.removeDay = function(i) { scheduleData[currentGroup].days.splice(i,1); renderAdminEditor(); };
+    window.removePair = function(d,i) { scheduleData[currentGroup].days[d].pairs.splice(i,1); renderAdminEditor(); };
+    window.addPair = function(d) { scheduleData[currentGroup].days[d].pairs.push({num:scheduleData[currentGroup].days[d].pairs.length+1, type:'common', subject:'', teacher:'', room:''}); renderAdminEditor(); };
+    window.changeType = function(d,i) {
+        let newType = document.getElementById(`type_${d}_${i}`).value;
+        let old = scheduleData[currentGroup].days[d].pairs[i];
+        let newP = { num: old.num, type: newType };
+        if(newType==='common') { newP.subject=old.subject||''; newP.teacher=old.teacher||''; newP.room=old.room||''; }
+        else if(newType==='split') { newP["1"]=old["1"]||''; newP["2"]=old["2"]||''; newP.teacher1=old.teacher1||''; newP.teacher2=old.teacher2||''; newP.room1=old.room1||''; newP.room2=old.room2||''; }
+        else { newP.subject=old.subject||''; newP.teacher=old.teacher||''; newP.room=old.room||''; }
+        scheduleData[currentGroup].days[d].pairs[i]=newP;
+        renderAdminEditor();
+    };
+    function collectEdits() {
+        if(!scheduleData[currentGroup]) return;
+        let days = scheduleData[currentGroup].days;
+        for(let i=0; i<days.length; i++) {
+            let dateInput = document.getElementById(`dayDate_${i}`);
+            if(dateInput) days[i].date = dateInput.value;
+            let shortCh = document.getElementById(`dayShort_${i}`);
+            if(shortCh) days[i].shortMode = shortCh.checked;
+            for(let j=0; j<days[i].pairs.length; j++) {
+                let p = days[i].pairs[j];
+                let numInp = document.getElementById(`num_${i}_${j}`);
+                if(numInp) p.num = parseInt(numInp.value);
+                if(p.type==='common') {
+                    let s=document.getElementById(`subj_${i}_${j}`); if(s) p.subject=s.value;
+                    let t=document.getElementById(`teach_${i}_${j}`); if(t) p.teacher=t.value;
+                    let r=document.getElementById(`room_${i}_${j}`); if(r) p.room=r.value;
+                } else if(p.type==='split') {
+                    let s1=document.getElementById(`s1_${i}_${j}`); if(s1) p["1"]=s1.value;
+                    let s2=document.getElementById(`s2_${i}_${j}`); if(s2) p["2"]=s2.value;
+                    let t1=document.getElementById(`t1_${i}_${j}`); if(t1) p.teacher1=t1.value;
+                    let t2=document.getElementById(`t2_${i}_${j}`); if(t2) p.teacher2=t2.value;
+                    let r1=document.getElementById(`r1_${i}_${j}`); if(r1) p.room1=r1.value;
+                    let r2=document.getElementById(`r2_${i}_${j}`); if(r2) p.room2=r2.value;
+                } else {
+                    let s=document.getElementById(`subj_${i}_${j}`); if(s) p.subject=s.value;
+                    let t=document.getElementById(`teach_${i}_${j}`); if(t) p.teacher=t.value;
+                    let r=document.getElementById(`room_${i}_${j}`); if(r) p.room=r.value;
+                }
+            }
+        }
+    }
+    async function saveToGitHub() {
+        collectEdits();
+        let content = JSON.stringify(scheduleData, null, 2);
+        let encoded = btoa(unescape(encodeURIComponent(content)));
+        try {
+            let getRes = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data/schedule.json`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
+            let sha = null;
+            if(getRes.ok) { let data = await getRes.json(); sha = data.sha; }
+            let putRes = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data/schedule.json`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: "Обновление расписания", content: encoded, sha: sha })
+            });
+            if(putRes.ok) { alert("✅ Сохранено!"); showSchedule(currentGroup); }
+            else alert("❌ Ошибка: " + (await putRes.text()));
+        } catch(e) { alert("Ошибка: "+e.message); }
     }
     
+    document.getElementById('secretClicker').addEventListener('click', ()=>{ clickCount++; if(clickCount>=5) { clickCount=0; document.getElementById('passwordPrompt').classList.add('active'); } setTimeout(()=>{ clickCount=0; },3000); });
+    document.getElementById('submitPasswordBtn').addEventListener('click', ()=>{ if(document.getElementById('adminPassword').value===ADMIN_PASSWORD) { document.getElementById('passwordPrompt').classList.remove('active'); openAdmin(); } else alert("Неверный пароль!"); });
+    document.getElementById('closePasswordBtn').addEventListener('click', ()=>{ document.getElementById('passwordPrompt').classList.remove('active'); });
+    document.getElementById('closeAdminBtn').addEventListener('click', ()=>{ document.getElementById('adminPanel').classList.remove('active'); });
+    document.getElementById('saveGitHubBtn').addEventListener('click', saveToGitHub);
     loadData();
 </script>
 </body>
