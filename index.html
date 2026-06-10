@@ -72,14 +72,12 @@
             border-left: 4px solid #4a6bb5;
         }
         .pair-num { font-weight: 600; margin-bottom: 6px; color: #bbd4ff; }
-        .pair-subj { font-weight: 500; }
+        .pair-subj { font-weight: 500; white-space: pre-line; }
         .pair-teacher { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
         .empty-day { text-align: center; padding: 36px; color: #7b8bb0; }
         .status { text-align: center; font-size: 0.75rem; color: #6a7ca3; margin: 16px 0; }
         .footer { text-align: center; margin-top: 32px; font-size: 0.7rem; color: #44506e; }
-        @media (max-width: 550px) {
-            .day-header { flex-direction: column; gap: 6px; }
-        }
+        .last-updated { text-align: center; font-size: 0.7rem; margin-top: 8px; color: #5a6b8a; }
     </style>
 </head>
 <body>
@@ -96,7 +94,7 @@
     <div class="schedule-card" id="scheduleCard">
         <div class="empty-day">📌 Выберите группу</div>
     </div>
-    <div class="footer">🔄 Данные обновляются ежедневно в 5 утра</div>
+    <div class="footer">🔄 Расписание обновлено 11.06.2026</div>
 </div>
 
 <script>
@@ -110,7 +108,7 @@
             scheduleData = await res.json();
             renderGroups();
         } catch (e) {
-            document.getElementById('groupList').innerHTML = '<div style="color:#ff8888;">❌ Не удалось загрузить данные. Запустите GitHub Actions вручную.</div>';
+            document.getElementById('groupList').innerHTML = '<div style="color:#ff8888;">❌ Не удалось загрузить данные. Убедитесь, что файл schedule.json лежит в папке data/</div>';
         }
     }
     
