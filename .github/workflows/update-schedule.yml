@@ -1,0 +1,25 @@
+name: Обновление расписания
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # каждый день в 5 утра
+  workflow_dispatch:     # чтобы можно было запустить вручную
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Парсинг расписания
+        run: |
+          mkdir -p data
+          python3 .github/scripts/parse_schedule.py
+          
+      - name: Коммит изменений
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/
+          git commit -m "Автообновление расписания" || exit 0
+          git push
